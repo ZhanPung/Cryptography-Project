@@ -1,0 +1,49 @@
+from sympy import mod_inverse
+
+q = 204653690413690430786325341388324720113
+p = 65447707688104208342534679203905168913652650940370441734328893876283344056449
+g = 19239429986662041640879209575706824302357783171650956178275779500175328625635
+h = 17378491063947541243989551935311883776365576780836156470355578197541193194905
+
+# Ciphertexts
+c1 = (3888855824659838867580752920875729663933293078222557873311208893674133591600,49735410253657209528938835911960770593218546092308130718120343440304707147913)
+c2 = (30788593298273895101613197344703553558331551496834605547978891794739207191595,49185018460373549410016102648774733392705086325411954315344669437180719003012)
+c3 = (61199440093521111014441227618680107673490897269002338232794269708612413049158,4308453378722240596584679388088972256765021862477977031285364048968916875880)
+
+# y values
+y1, y2 = 496,841
+y1_sq = y1 ** 2
+y2_sq = y2 ** 2
+constant = y1_sq + y2_sq  # y1^2 + y2^2
+
+# Function to multiply a ciphertext by a scalar (using exponentiation)
+def scalar_mult(c, scalar, p):
+    a, b = c
+    return (pow(a, scalar, p), pow(b, scalar, p))
+
+# Compute Enc(-2y1 x1)
+scale_2y1 = -2 * y1
+enc_2y1x1 = scalar_mult(c2, scale_2y1, p)
+
+# Compute Enc(-2y2 x2)
+scale_2y2 = -2 * y2
+enc_2y2x2 = scalar_mult(c3, scale_2y2, p)
+
+# Homomorphically add c1, enc_2y1x1, enc_2y2x2
+def add_ciphers(c1, c2, p):
+    a1, b1 = c1
+    a2, b2 = c2
+    return (a1 * a2 % p, b1 * b2 % p)
+
+# Add all terms
+result = add_ciphers(c1, enc_2y1x1, p)
+result = add_ciphers(result, enc_2y2x2, p)
+
+# Add the constant (y1^2 + y2^2) by multiplying h^constant to b
+h_constant = pow(h, constant, p)
+a_final, b_final = result
+b_final = b_final * h_constant % p
+final_ciphertext = (a_final, b_final)
+
+print(f"{final_ciphertext[0]},{final_ciphertext[1]}")
+
